@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<widget xmlns   = "http://www.w3.org/ns/widgets"
+    xmlns:gap   = "http://phonegap.com/ns/1.0"
+    id          = "it.tissino.bezapp"
+    versionCode = "10"
+    version     = "0.0.1" >
+
+<!-- versionCode is optional and Android only -->
+
+  <name>Bêz</name>
+
+  <description>
+      A demo example for a basic client/server mobile app.
+  </description>
+
+  <author href="http://loris.tissino.it" email="loris.tissino@gmail.com">
+      Loris Tissino
+  </author>
+
+  <icon src="images/icon-180x180.png" width="180" height="180" />
+
+</widget>
