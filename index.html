@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Bêz</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8" />
+    <script src="js/jquery-2.2.4.min.js"
+      integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
+      crossorigin="anonymous">
+    </script>
+    <script src="js/jquery-ui.min.js"
+      integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU="
+      crossorigin="anonymous">
+    </script>
+    <script src="js/jquery.mobile-1.4.5.min.js"
+      integrity="sha256-Lsk+CDPOzTapLoAzWW0G/WeQeViS3FMzywpzPZV8SXk="
+      crossorigin="anonymous">
+    </script>
+    <script src="js/bez.js">
+    </script>
+
+    <link rel="stylesheet" href="css/jquery.mobile-1.4.5.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/png" sizes="192x192"  href="images/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="images/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
+    <link rel="manifest" href="images/manifest.json">
+</head>
+
+<body>
+
+<h1>Bêz</h1>
+
+<div id="main" data-role="page">
+    <div data-role="header">
+        <h1>Bêz</h1>
+    </div><!-- /header -->
+    
+    <div role="main" class="ui-content">
+      <div id="pages">
+        <div id="accounts-page">
+            <h1>Accounts</h1>
+              <ul data-role="listview" data-inset="true" data-filter="true" id="accounts-list"></ul>
+            <hr id="accounts-hr" />
+            <button id="accounts-refresh-button" class="ui-btn ui-icon-refresh ui-btn-icon-left">Refresh</button>
+        </div>
+        <div id="account-details-page">
+          <h1 id="account-name"></h1>
+          <div>Code: <strong><span id="account-code"></span></strong></div>
+          <div>Long name: <strong><span id="account-longname"></span></strong></div>
+          <button id="accounts-back-button" class="ui-btn ui-icon-back ui-btn-icon-left">Back</button>
+        </div>
+        <div id="transactions-page">
+            <h1>Transactions</h1>
+            <button id="transactions-new" class="ui-btn ui-icon-plus ui-btn-icon-left">Add</button>
+            <ul data-role="listview" data-inset="true" data-filter="true" id="transactions-list"></ul>
+            <hr id="transactions-hr" />
+            <button id="transactions-refresh-button" class="ui-btn ui-icon-refresh ui-btn-icon-left">Refresh</button>
+        </div>
+        <div id="transaction-details-page">
+          <h1><span id="transaction-title"></span></h1>
+          <label for="date">Date:</label>
+          <input type="date" name="date" id="date" value="">
+          <label for="description">Description:</label>
+          <input type="text" name="description" id="description" value="">
+          <label for="amount">Amount:</label>
+          <input type="number" pattern="[0-9\.]*" name="amount" id="amount" value="">
+          
+          <label for="debit-account" class="select">Debit Account</label>
+          <select name="debit-account" id="debit-account">
+          </select>
+          
+          <label for="credit-account" class="select">Credit Account</label>
+          <select name="credit-account" id="credit-account">
+          </select>
+
+          <button id="transaction-save" class="ui-btn ui-icon-check ui-btn-icon-left">Save</button>
+          <button id="transaction-back-button" class="ui-btn ui-icon-back ui-btn-icon-left">Back</button>
+        </div>
+
+
+        <div id="settings-page">
+            <h1>Settings</h1>
+              <div id="url_request">
+                <label for="url">Url:</label>
+                <input type="text" id="url" placeholder="url" />
+                <button id="settings-save" class="ui-btn ui-icon-check ui-btn-icon-left" >Save</button>
+              </div>
+              <div id="apikey_request">
+                <label for="ak">API key:</label>
+                <input type="text" id="ak" placeholder="your API key" />
+                <button id="akb" class="ui-btn ui-icon-check ui-btn-icon-left">Set</button>
+              </div>
+              <a id="akr" href="#">Reset API key</a>
+        </div>
+        <div id="menu-page">
+            <button id="accounts-menu-item" class="ui-btn ui-icon-comment ui-btn-icon-left menu-item" data-element="#accounts-page">Accounts</button>
+            <button id="transactions-menu-item" class="ui-btn ui-icon-calendar ui-btn-icon-left menu-item" data-element="#transactions-page">Transactions</button>
+            <button id="settings-menu-item" class="ui-btn ui-icon-gear ui-btn-icon-left menu-item" data-element="#settings-page">Settings</button>
+        </div>
+      </div>
+    </div><!-- /content -->
+    
+</div><!-- /page -->
+</body>
+</html>
