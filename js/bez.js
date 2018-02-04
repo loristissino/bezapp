@@ -92,16 +92,19 @@ function showTransactions() {
 
 
 function retrieveAccounts() {
+  alert("retrieving accounts, url= " +localStorage.getItem('url'));
   $.getJSON( localStorage.getItem('url'), {
     action: "accounts",
     apikey: apikey,
   })
   .done(function( data ) {
     localStorage.setItem('accounts', JSON.stringify(data));
+    alert("accounts retrieved");
     $("#accounts-hr").removeClass("failed");
     showAccounts();
   })
   .fail(function() {
+    alert("accounts NOT retrieved");
     $("#accounts-hr").addClass("failed");
   })
   ;
@@ -141,11 +144,9 @@ function saveTransaction() {
     type : 'POST',
     success : function(data){
       console.log(data);
-      /*
       retrieveTransactions();
       $("#transactions-page").show();
       $("#transaction-details-page").hide();
-      */
       }
     })
     .fail(function() {
