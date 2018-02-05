@@ -31,6 +31,8 @@
   
   <access origin="*" />
 
-  <!--gap:plugin name="cordova-plugin-whitelist" source="npm" /-->
+  <!-- see https://phonegap.com/blog/2015/11/19/config_xml_changes_part_two/ -->
+  <!--gap:plugin name="cordova-plugin-whitelist" source="npm"-->
+  <plugin name="cordova-plugin-whitelist" version="~1" />
     
 </widget>
