@@ -28,5 +28,7 @@
      
      -->  
   <allow-navigation href="*" />
+  
+  <access origin="*" />
 
 </widget>
