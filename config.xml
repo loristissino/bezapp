@@ -3,7 +3,7 @@
     xmlns:gap   = "http://phonegap.com/ns/1.0"
     id          = "it.tissino.bezapp"
     versionCode = "10"
-    version     = "0.0.2" >
+    version     = "0.0.3" >
 
 <!-- versionCode is optional and Android only -->
 
@@ -19,7 +19,7 @@
 
   <icon src="images/icon-180x180.png" width="180" height="180" />
   
-  <feature name="http://api.phonegap.com/1.0/network"/>
+  <!--feature name="http://api.phonegap.com/1.0/network"/-->
   
   <!-- A wildcard can be used to whitelist the entire network,
      over HTTP and HTTPS.
@@ -31,6 +31,6 @@
   
   <access origin="*" />
 
-  <gap:plugin name="cordova-plugin-whitelist" source="npm" />
+  <!--gap:plugin name="cordova-plugin-whitelist" source="npm" /-->
     
 </widget>
