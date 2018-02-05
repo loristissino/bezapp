@@ -27,6 +27,6 @@
      see https://github.com/apache/cordova-plugin-whitelist
      
      -->  
-  <allow-navigation href="*"
+  <allow-navigation href="*" />
 
 </widget>
