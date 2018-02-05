@@ -31,4 +31,6 @@
   
   <access origin="*" />
 
+  <gap:plugin name="cordova-plugin-whitelist" source="npm">
+    
 </widget>

@@ -26,6 +26,13 @@
     <link rel="icon" type="image/png" sizes="96x96" href="images/favicon-96x96.png">
     <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
     <link rel="manifest" href="images/manifest.json">
+    
+    <!-- see https://stackoverflow.com/questions/33445491/phonegap-ajax-request-not-working -->
+    <meta http-equiv="Content-Security-Policy" 
+          content="default-src *; 
+                   style-src 'self' 'unsafe-inline' 'unsafe-eval'; 
+                   script-src 'self' 'unsafe-inline' 'unsafe-eval';">
+    
 </head>
 
 <body>
