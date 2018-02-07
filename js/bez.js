@@ -1,6 +1,8 @@
 "use strict";
-  
+
 var apikey;
+var accounts;
+var transactions;
 
 function checkApikey() {
   apikey = localStorage.getItem("apikey");
@@ -9,7 +11,6 @@ function checkApikey() {
      $("#apikey_request").hide();
      $("#akr").show();
      $("#url").val(localStorage.getItem('url'));
-     retrieveData();
   }
   else {
      $("#apikey").text(""); 
@@ -19,16 +20,11 @@ function checkApikey() {
   }
 }
 
-function retrieveData() {
-  retrieveAccounts();
-  retrieveTransactions();
-}
 
-function showAccounts() {
-  var list = $("#accounts-list");
+function loadAccountsIntoUI() {
+  var list = $("#accounts-list").empty();
   var debit_select = $("#debit-account").empty();
   var credit_select = $("#credit-account").empty();
-  $("#accounts").html('').append(list);
   var items = JSON.parse(localStorage.getItem('accounts'));
   for (var i=0; i<items.length; i++) {
     var li = $('<li/>').addClass('account').append(
@@ -57,17 +53,30 @@ function showAccounts() {
   credit_select.selectmenu( "refresh" );
   
   $("#accounts-back-button").click(function() {
-  console.log("clicked");
+    console.log("clicked");
     $("#accounts-page").show();
     $("#account-details-page").hide();
   });
   
 }
 
-function showTransactions() {
+function loadTransactionIntoUI(id) {
+  var transaction = transactions.find(function(item) {return item['rowid']==id;});
+  console.log(transaction); 
+  $('#date').val(transaction['date']);
+  $('#debit-account').val(transaction['debit-account']);
+  $('#credit-account').val(transaction['credit-account']);
+  $('#amount').val(transaction['amount']);
+  $('#description').val(transaction['description']);
+  $("#debit-account").val(transaction['debit']).selectmenu( "refresh" );
+  $("#credit-account").val(transaction['credit']).selectmenu( "refresh" );
+}
+
+function loadTransactionsIntoUI() {
   var list = $("#transactions-list");
   list.empty();
-  var items = JSON.parse(localStorage.getItem('transactions'));
+  transactions = JSON.parse(localStorage.getItem('transactions'));
+  var items = transactions;
   for (var i=0; i<items.length; i++) {
     var li = $('<li/>').addClass('transaction').append(
       $("<a/>")
@@ -75,6 +84,7 @@ function showTransactions() {
         .attr('data-id', items[i]['rowid'])
         .click(function() {
           $("#transactions-page").hide();
+          loadTransactionIntoUI($(this).attr('data-id'));
           $("#transaction-details-page").show();
         })
       );
@@ -92,20 +102,19 @@ function showTransactions() {
 
 
 function retrieveAccounts() {
-  alert("retrieving accounts, url= " +localStorage.getItem('url'));
   $.getJSON( localStorage.getItem('url'), {
     action: "accounts",
     apikey: apikey,
   })
   .done(function( data ) {
     localStorage.setItem('accounts', JSON.stringify(data));
-    alert("accounts retrieved");
-    $("#accounts-hr").removeClass("failed");
-    showAccounts();
+    $("#accounts-hr").removeClass("fail");
+    $("#accounts-hr").addClass("success");
+    loadAccountsIntoUI();
   })
   .fail(function() {
-    alert("accounts NOT retrieved");
-    $("#accounts-hr").addClass("failed");
+    $("#accounts-hr").removeClass("success");
+    $("#accounts-hr").addClass("fail");
   })
   ;
 }
@@ -117,12 +126,14 @@ function retrieveTransactions() {
   })
   .done(function( data ) {
     localStorage.setItem('transactions', JSON.stringify(data));
-    $("#transactions-hr").removeClass("failed");
-    showTransactions();
+    $("#transactions-hr").addClass("success");
+    $("#transactions-hr").removeClass("fail");
+    loadTransactionsIntoUI();
   })
   .fail(function() {
     console.log('failed');
-    $("#transactions-hr").addClass("failed");
+    $("#transactions-hr").addClass("fail");
+    $("#transactions-hr").removeClass("success");
   })
   ;
 }
@@ -157,55 +168,60 @@ function saveTransaction() {
   }
 
 $( document ).ready(function() {
-  if (typeof(Storage)!=="undefined") {
-     // the browser supports local and session storage...
-     $("#loader").hide();
-     
-     $("#akr").click(function() {
-         localStorage.removeItem("apikey");
-         $("#apikey_request").hide();
-         checkApikey();
-     });
-     
-     $("#akb").click( function() {
-         apikey = $("#ak").val();
-         localStorage.setItem("apikey", apikey);
-         $("#apikey").text(apikey);
-         $("#apikey_request").hide();
-         checkApikey();
-     } );
-     
-     
-     $(".menu-item").click(function() {
-        var element = $(this).attr('data-element');
-        $("#pages").children().hide();
-        $(element).show();
-        $("#menu-page").show();
-     });
-     
-     $("#settings-save").click(function() {
-        localStorage.setItem('url', $("#url").val());
-     });
-     
-     $("#accounts-refresh-button").click(function() {
-       retrieveAccounts();
-      });
-     $("#transactions-refresh-button").click(function() {
-       retrieveTransactions();
-      });
-      
-     $("#transaction-save").click(function() {
-       saveTransaction();
-      });
-     
+  if (typeof(Storage)=="undefined") {
+    $("#errors-page").text("Sorry, this browser is not supported.").show();
+    return;
+  }
+  // the browser supports local and session storage...
+  $("#errors").hide();
+
+  // ---- API key management ----
+  $("#akr").click(function() {
+     localStorage.removeItem("apikey");
+     $("#apikey_request").hide();
      checkApikey();
-     
-     
-  }
-  else {
-     $("#loader").text("Sorry, this browser is not supported.");
-  }
+  });
+
+  $("#akb").click( function() {
+     apikey = $("#ak").val();
+     localStorage.setItem("apikey", apikey);
+     $("#apikey").text(apikey);
+     $("#apikey_request").hide();
+     checkApikey();
+  } );
+
+  // ---- menu management ----
+  $(".menu-item").click(function() {
+    var element = $(this).attr('id').replace(/-menu-item/, '');
+    $("#pages").children().hide();
+    $("#menu-page").children().show();
+    $('#'+element+'-menu-item').hide();
+    $('#'+element+'-page').show();
+    $("#menu-page").show();
+  });
+
+  // ---- settings management ----
+  $("#settings-save").click(function() {
+    localStorage.setItem('url', $("#url").val());
+  });
+
+  // ---- refresh buttons ----
+  $("#accounts-refresh-button").click(function() {
+   retrieveAccounts();
+  });
+
+  $("#transactions-refresh-button").click(function() {
+   retrieveTransactions();
+  });
+
+  // ---- action buttons ----
+  $("#transaction-save").click(function() {
+   saveTransaction();
+  });
+
+  checkApikey();
   
-  
+  loadAccountsIntoUI();
+  loadTransactionsIntoUI();
   
 });

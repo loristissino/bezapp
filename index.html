@@ -47,26 +47,34 @@
     
     <div role="main" class="ui-content">
       <div id="pages">
-        <div id="accounts-page">
+        <div id="logo-page">
+          <img src="images/icon-180x180.png" />
+        </div>
+        <div id="errors-page" class="initially-hidden">
+          <div id="errors">
+          &nbsp;
+          </div>
+        </div>
+        <div id="accounts-page" class="initially-hidden">
             <h1>Accounts</h1>
               <ul data-role="listview" data-inset="true" data-filter="true" id="accounts-list"></ul>
             <hr id="accounts-hr" />
             <button id="accounts-refresh-button" class="ui-btn ui-icon-refresh ui-btn-icon-left">Refresh</button>
         </div>
-        <div id="account-details-page">
+        <div id="account-details-page" class="initially-hidden">
           <h1 id="account-name"></h1>
           <div>Code: <strong><span id="account-code"></span></strong></div>
           <div>Long name: <strong><span id="account-longname"></span></strong></div>
           <button id="accounts-back-button" class="ui-btn ui-icon-back ui-btn-icon-left">Back</button>
         </div>
-        <div id="transactions-page">
+        <div id="transactions-page" class="initially-hidden">
             <h1>Transactions</h1>
             <button id="transactions-new" class="ui-btn ui-icon-plus ui-btn-icon-left">Add</button>
             <ul data-role="listview" data-inset="true" data-filter="true" id="transactions-list"></ul>
             <hr id="transactions-hr" />
             <button id="transactions-refresh-button" class="ui-btn ui-icon-refresh ui-btn-icon-left">Refresh</button>
         </div>
-        <div id="transaction-details-page">
+        <div id="transaction-details-page" class="initially-hidden">
           <h1><span id="transaction-title"></span></h1>
           <label for="date">Date:</label>
           <input type="date" name="date" id="date" value="">
@@ -88,7 +96,7 @@
         </div>
 
 
-        <div id="settings-page">
+        <div id="settings-page" class="initially-hidden">
             <h1>Settings</h1>
               <div id="url_request">
                 <label for="url">Url:</label>
@@ -103,9 +111,9 @@
               <a id="akr" href="#">Reset API key</a>
         </div>
         <div id="menu-page">
-            <button id="accounts-menu-item" class="ui-btn ui-icon-comment ui-btn-icon-left menu-item" data-element="#accounts-page">Accounts</button>
-            <button id="transactions-menu-item" class="ui-btn ui-icon-calendar ui-btn-icon-left menu-item" data-element="#transactions-page">Transactions</button>
-            <button id="settings-menu-item" class="ui-btn ui-icon-gear ui-btn-icon-left menu-item" data-element="#settings-page">Settings</button>
+            <button id="accounts-menu-item" class="ui-btn ui-icon-comment ui-btn-icon-left menu-item">Accounts</button>
+            <button id="transactions-menu-item" class="ui-btn ui-icon-calendar ui-btn-icon-left menu-item">Transactions</button>
+            <button id="settings-menu-item" class="ui-btn ui-icon-gear ui-btn-icon-left menu-item">Settings</button>
         </div>
       </div>
     </div><!-- /content -->
