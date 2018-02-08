@@ -62,14 +62,14 @@ function loadAccountsIntoUI() {
 
 function loadTransactionIntoUI(id) {
   var transaction = transactions.find(function(item) {return item['rowid']==id;});
-  console.log(transaction); 
+  $('#transaction-title').html('Edit').attr('data-id', id);
   $('#date').val(transaction['date']);
-  $('#debit-account').val(transaction['debit-account']);
-  $('#credit-account').val(transaction['credit-account']);
+  $('#debit-account').val(transaction['debit-account']).selectmenu( "refresh" );
+  $('#credit-account').val(transaction['credit-account']).selectmenu( "refresh" );
   $('#amount').val(transaction['amount']);
   $('#description').val(transaction['description']);
-  $("#debit-account").val(transaction['debit']).selectmenu( "refresh" );
-  $("#credit-account").val(transaction['credit']).selectmenu( "refresh" );
+  $('#debit-account').val(transaction['debit']).selectmenu( "refresh" );
+  $('#credit-account').val(transaction['credit']).selectmenu( "refresh" );
 }
 
 function loadTransactionsIntoUI() {
@@ -139,20 +139,32 @@ function retrieveTransactions() {
 }
 
 function saveTransaction() {
-  $.ajax({
-    url : localStorage.getItem('url') + '?' + $.param({
+  var id = $('#transaction-title').attr('data-id');
+  
+  var params = {
       action: "transaction",
       apikey: apikey,
-      }),
-    data: {
+    };
+
+  var type = 'POST';
+  
+  if (id) {
+    type = 'PUT';
+    params['id'] = id;
+  }
+  
+  $.ajax({
+    url : localStorage.getItem('url') + '?' + $.param(params),
+    contentType: 'application/json',
+    data: JSON.stringify({
       data: { 
         date: $('#date').val(),
         debit: $('#debit-account').val(),
         credit: $('#credit-account').val(),
         amount: $('#amount').val(),
         description:$('#description').val()
-        }},
-    type : 'POST',
+        }}),
+    type : type,
     success : function(data){
       console.log(data);
       retrieveTransactions();
@@ -160,12 +172,43 @@ function saveTransaction() {
       $("#transaction-details-page").hide();
       }
     })
-    .fail(function() {
+   .fail(function() {
       console.log("error");
       return false;
     })
-    ;
+  ;
+}
+
+function deleteTransaction() {
+  var id = $('#transaction-title').attr('data-id');
+  
+  var params = {
+      action: "transaction",
+      apikey: apikey,
+    };
+
+  var type = 'DELETE';
+  
+  if (id) {
+    params['id'] = id;
   }
+  
+  $.ajax({
+    url : localStorage.getItem('url') + '?' + $.param(params),
+    type : type,
+    success : function(data){
+      console.log(data);
+      retrieveTransactions();
+      $("#transactions-page").show();
+      $("#transaction-details-page").hide();
+      }
+    })
+   .fail(function() {
+      console.log("error");
+      return false;
+    })
+  ;
+}
 
 $( document ).ready(function() {
   if (typeof(Storage)=="undefined") {
@@ -216,8 +259,42 @@ $( document ).ready(function() {
 
   // ---- action buttons ----
   $("#transaction-save").click(function() {
-   saveTransaction();
+    saveTransaction();
   });
+  $("#transaction-duplicate").click(function() {
+    $('#transaction-title').html('New').attr('data-id', null);
+  });
+  $("#transactions-new").click(function() {
+    var d = new Date();
+    $('#date').val([ d.getFullYear(), ('0' + (d.getMonth() + 1)).slice(-2), ('0' + d.getDate()).slice(-2) ].join('-'));
+    $('#debit-account').val('').selectmenu( "refresh" );
+    $('#credit-account').val('').selectmenu( "refresh" );
+    $('#amount').val(0);
+    $('#description').val('');
+    $('#transaction-title').html('New').attr('data-id', null);
+    $("#transactions-page").hide();
+    $("#transaction-details-page").show();
+
+  });
+
+
+  $("#transaction-delete").click(function() {
+    $("#pages").children().hide();
+    $("#dialog-page").show();
+  });
+
+  $("#delete-transaction-confirm").click(function() {
+    deleteTransaction();
+    $("#dialog-page").hide();
+    $("#transactions-page").show();
+  });
+
+  $("#delete-transaction-cancel").click(function() {
+    $("#dialog-page").hide();
+    $("#transaction-details-page").show();
+  });
+
+
 
   checkApikey();
   
