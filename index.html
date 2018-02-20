@@ -16,6 +16,10 @@
       integrity="sha256-Lsk+CDPOzTapLoAzWW0G/WeQeViS3FMzywpzPZV8SXk="
       crossorigin="anonymous">
     </script>
+    <script src="js/gibberish-aes-1.0.0.min.js"
+      integrity="sha256-8fXl1U6j0c22rLRN0ZxoRNFK27eA1jFqA32A2uxgnZk="
+      crossorigin="anonymous">
+    </script>
     <script src="js/bez.js">
     </script>
     
@@ -80,17 +84,10 @@
           <input type="date" name="date" id="date" value="">
           <label for="description">Description:</label>
           <input type="text" name="description" id="description" value="">
-          <label for="amount">Amount:</label>
-          <input type="number" pattern="[0-9\.]*" name="amount" id="amount" value="">
-          
-          <label for="debit-account" class="select">Debit Account</label>
-          <select name="debit-account" id="debit-account">
-          </select>
-          
-          <label for="credit-account" class="select">Credit Account</label>
-          <select name="credit-account" id="credit-account">
-          </select>
-
+          <div id="postings"></div>
+          <div style="text-align: right;">
+            <button id="transaction-add-account" class="ui-btn ui-btn-inline ui-icon-carat-d ui-btn-icon-right">Add</button>
+          </div>
           <button id="transaction-save" class="ui-btn ui-icon-check ui-btn-icon-left">Save</button>
           <button id="transaction-duplicate" class="ui-btn ui-icon-plus ui-btn-icon-left">Duplicate</button>
           <button id="transaction-delete" class="ui-btn ui-shadow ui-icon-delete ui-btn-icon-left ui-btn-b">Delete</button>

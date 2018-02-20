@@ -1,8 +1,15 @@
 "use strict";
 
 var apikey;
-var accounts;
-var transactions;
+var accounts = [];
+var transactions = [];
+var currentTransaction;
+
+function textToFloat(text) {
+  var v=parseFloat(text);
+  if (!v) v=0;
+  return v;
+}
 
 function checkApikey() {
   apikey = localStorage.getItem("apikey");
@@ -23,16 +30,14 @@ function checkApikey() {
 
 function loadAccountsIntoUI() {
   var list = $("#accounts-list").empty();
-  var debit_select = $("#debit-account").empty();
-  var credit_select = $("#credit-account").empty();
-  var items = JSON.parse(localStorage.getItem('accounts'));
-  for (var i=0; i<items.length; i++) {
+  accounts = JSON.parse(localStorage.getItem('accounts'));
+  for (var i=0; i<accounts.length; i++) {
     var li = $('<li/>').addClass('account').append(
       $("<a/>")
-        .html(items[i]['name'])
-        .attr('data-code', items[i]['code'])
-        .attr('data-name', items[i]['name'])
-        .attr('data-longname', items[i]['longname'])
+        .html(accounts[i]['name'])
+        .attr('data-code', accounts[i]['code'])
+        .attr('data-name', accounts[i]['name'])
+        .attr('data-longname', accounts[i]['longname'])
         .click(function() {
           $("#accounts-page").hide();
           $("#account-name").html($(this).attr('data-name'));
@@ -42,45 +47,115 @@ function loadAccountsIntoUI() {
         })
       );
     list.append(li);
-    
-    var select_option_debit = $('<option>').html(items[i]['name']).attr('value', items[i]['code']);
-    var select_option_credit = $('<option>').html(items[i]['name']).attr('value', items[i]['code']);
-    debit_select.append(select_option_debit);
-    credit_select.append(select_option_credit);
   }
   list.listview('refresh');
-  debit_select.selectmenu( "refresh" );
-  credit_select.selectmenu( "refresh" );
+
   
   $("#accounts-back-button").click(function() {
-    console.log("clicked");
+    //console.log("clicked");
     $("#accounts-page").show();
     $("#account-details-page").hide();
   });
   
 }
 
+function loadAccountsIntoPosting(element) {
+  element.empty();
+  var items = JSON.parse(localStorage.getItem('accounts'));
+  element.append($('<option>').html('---').attr('value', ''));
+  for (var i=0; i<items.length; i++) {
+    var select_option = $('<option>').html(items[i]['name']).attr('value', items[i]['code']);
+    element.append(select_option);
+  }
+}
+
 function loadTransactionIntoUI(id) {
-  var transaction = transactions.find(function(item) {return item['rowid']==id;});
-  $('#transaction-title').html('Edit').attr('data-id', id);
+  if (id) {
+    var transaction = transactions.find(function(item) {return item['rowid']==id;});
+    $('#transaction-title').html('Edit').attr('data-id', id);
+  }
+  else {
+    var d = new Date();
+    var date = [ d.getFullYear(), ('0' + (d.getMonth() + 1)).slice(-2), ('0' + d.getDate()).slice(-2) ].join('-');
+    var transaction = {'date': date, 'description': '', 'postings': [ {'account': '', 'amount': ''}, {'account': '', 'amount': ''} ]};
+    $('#transaction-title').html('New').attr('data-id', null);
+  }
   $('#date').val(transaction['date']);
-  $('#debit-account').val(transaction['debit-account']).selectmenu( "refresh" );
-  $('#credit-account').val(transaction['credit-account']).selectmenu( "refresh" );
-  $('#amount').val(transaction['amount']);
   $('#description').val(transaction['description']);
-  $('#debit-account').val(transaction['debit']).selectmenu( "refresh" );
-  $('#credit-account').val(transaction['credit']).selectmenu( "refresh" );
+  currentTransaction = transaction;
+  postingsToUI();
+}
+
+function postingsToUI() {
+  var postings = $("#postings").empty();
+    
+  for (var i=0; i<currentTransaction['postings'].length; i++) {
+    var account = $('<select/>').attr('id', 'account_' + i).attr('name', 'account_' + i);
+    loadAccountsIntoPosting(account);
+    account.val(currentTransaction['postings'][i]['account']);
+    postings.append(account);
+    $('#account_' + i).selectmenu().selectmenu( "refresh" );
+    //postings.append($('<br />'));
+    var amount = $('<input/>').attr('id', 'amount_' + i).attr('type', 'number').css('text-align', 'right').attr('pattern', '\-[0-9\.]').val(currentTransaction['postings'][i]['amount']);
+    postings.append(amount);
+    //postings.append($('<br />'));
+    $('#amount_' + i).textinput().textinput( "refresh" );
+  }
+}
+
+function postingsFromUI() {
+  for (var i=0; i<currentTransaction['postings'].length; i++) {
+    currentTransaction['postings'][i]['account']=$('#account_' + i).val();
+    currentTransaction['postings'][i]['amount']=$('#amount_' + i).val();
+  }
+}
+
+function isTransactionOk(transaction) {
+  var sum = transaction['postings'].reduce(function(a, v) {
+    var account = accounts.find(function(item) {return item['code']==v['account'];});
+    var amount = 0;
+    if (account) {
+      amount = textToFloat(v['amount']);
+    }
+    else {
+      console.log("account not found: " + v['account']);
+      console.log(accounts);
+    }
+    return a + amount; 
+  }, 0);
+  return sum == 0 && transaction['postings'].length>=2;
+}
+
+function fixTransaction(transaction) {
+  // first, we filter out postings with no account
+  transaction['postings'] = transaction['postings'].filter(function(v) {return v['account']!='';});
+  
+  // second, we find out how many postings have a zero amount
+  var pWV = [];  // postings with amount zero;
+  transaction['postings'].filter(function(v, k) {if (v['amount']==0) pWV.push(k);});
+  
+  // third, if we only have one zero-amount posting...
+  if (pWV.length==1){ 
+    var sum = transaction['postings'].reduce(function(a, v) {return a + textToFloat(v['amount']); }, 0);
+    transaction['postings'][pWV[0]]['amount']=-sum;
+  }
 }
 
 function loadTransactionsIntoUI() {
+
   var list = $("#transactions-list");
   list.empty();
-  transactions = JSON.parse(localStorage.getItem('transactions'));
-  var items = transactions;
+  var items = transactions
+    .filter(function (item) { return item['deleted']==false; })
+    .sort(function (a, b) { return a['date'] < b['date']; });
   for (var i=0; i<items.length; i++) {
+    var text = items[i]['date'] + ' ' + items[i]['description'];
+    if (!items[i]['ok']) {
+      text += ' ⚠️';
+    }
     var li = $('<li/>').addClass('transaction').append(
       $("<a/>")
-        .html(items[i]['date'] + ' ' + items[i]['description'])
+        .html(text)
         .attr('data-id', items[i]['rowid'])
         .click(function() {
           $("#transactions-page").hide();
@@ -88,6 +163,7 @@ function loadTransactionsIntoUI() {
           $("#transaction-details-page").show();
         })
       );
+      
     list.append(li);
   }
   list.listview('refresh');
@@ -98,8 +174,6 @@ function loadTransactionsIntoUI() {
   });
   
 }
-
-
 
 function retrieveAccounts() {
   $.getJSON( localStorage.getItem('url'), {
@@ -140,6 +214,41 @@ function retrieveTransactions() {
 
 function saveTransaction() {
   var id = $('#transaction-title').attr('data-id');
+  postingsFromUI();
+  var data = {
+    date: $('#date').val(),
+    description:$('#description').val(),
+    onDB: false,
+    deleted: false,
+  }
+  fixTransaction(currentTransaction);
+  data['postings']=currentTransaction['postings'];
+  data['ok']=isTransactionOk(currentTransaction);
+  var index = transactions.findIndex(function(item) {return item['rowid']==id;});
+  if (index > -1) {
+    data['rowid']=id;
+    transactions[index]=data;
+  }
+  else {
+    data['rowid']=-Date.now().valueOf(); // we use negative numbers for new items' ids
+    transactions.push(data);
+  }
+  
+  saveTransactionsToLocalStorageAndShowThem();
+}
+
+
+
+function saveTransactionsToLocalStorageAndShowThem() {
+  localStorage.setItem('transactions', JSON.stringify(transactions));
+  loadTransactionsIntoUI();
+  $("#transactions-page").show();
+  $("#transaction-details-page").hide();
+}
+
+
+function uploadTransaction() {
+  var id = $('#transaction-title').attr('data-id');
   
   var params = {
       action: "transaction",
@@ -166,10 +275,11 @@ function saveTransaction() {
         }}),
     type : type,
     success : function(data){
+      /*
       console.log(data);
       retrieveTransactions();
-      $("#transactions-page").show();
-      $("#transaction-details-page").hide();
+      */  
+      // here we should mark the transaction as sync'ed.
       }
     })
    .fail(function() {
@@ -177,6 +287,16 @@ function saveTransaction() {
       return false;
     })
   ;
+}
+
+function removeTransaction() {
+  var id = $('#transaction-title').attr('data-id');
+  var index = transactions.findIndex(function(item) {return item['rowid']==id;});
+  if (index > -1) {
+    transactions[index]['deleted']=true;
+  }
+  console.log(transactions);
+  saveTransactionsToLocalStorageAndShowThem();
 }
 
 function deleteTransaction() {
@@ -265,13 +385,7 @@ $( document ).ready(function() {
     $('#transaction-title').html('New').attr('data-id', null);
   });
   $("#transactions-new").click(function() {
-    var d = new Date();
-    $('#date').val([ d.getFullYear(), ('0' + (d.getMonth() + 1)).slice(-2), ('0' + d.getDate()).slice(-2) ].join('-'));
-    $('#debit-account').val('').selectmenu( "refresh" );
-    $('#credit-account').val('').selectmenu( "refresh" );
-    $('#amount').val(0);
-    $('#description').val('');
-    $('#transaction-title').html('New').attr('data-id', null);
+    loadTransactionIntoUI(null)
     $("#transactions-page").hide();
     $("#transaction-details-page").show();
 
@@ -283,8 +397,14 @@ $( document ).ready(function() {
     $("#dialog-page").show();
   });
 
+  $("#transaction-add-account").click(function() {
+    postingsFromUI();
+    currentTransaction['postings'].push({'account': '', 'amount': ''});
+    postingsToUI();
+  });
+
   $("#delete-transaction-confirm").click(function() {
-    deleteTransaction();
+    removeTransaction();
     $("#dialog-page").hide();
     $("#transactions-page").show();
   });
@@ -298,7 +418,29 @@ $( document ).ready(function() {
 
   checkApikey();
   
-  loadAccountsIntoUI();
-  loadTransactionsIntoUI();
+  transactions = JSON.parse(localStorage.getItem('transactions'));
+  if (transactions) {
+    loadTransactionsIntoUI();
+  }
+  else {
+    transactions = [];
+  }
+  
+  accounts = JSON.parse(localStorage.getItem('accounts'));
+  
+  var content = JSON.stringify({'a': 500, 'b': "ciao bao miao"});
+  var password = "booo";
+  
+  var encrypted = GibberishAES.enc(content, password);
+  console.log(encrypted);
+
+  var decrypted =  GibberishAES.dec(encrypted, password);
+  console.log(decrypted);
+
+  console.log(transactions);
+  //alert(decrypted);
+  
   
 });
+
+
