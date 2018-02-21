@@ -6,8 +6,26 @@
   text-align: center;
 }
 
-.illegal {
-  background-color: orange !important;
+.hash_tag {
+  color: blue !important;
+}
+
+.amount {
+  text-align: right !important;
+  margin-right: 1em !important;
+}
+
+#account-code, #account-longname, #account-netsum {
+  font-weight: bold;
+}
+
+#account-netsum {
+  font-size: 150%;
+}
+
+.ui-icon-duplicate:after {
+  background-image: url("images/duplicate-icon.png");
+  background-size: 18px 18px;
 }
 
 /* Gradient transparent - color - transparent */

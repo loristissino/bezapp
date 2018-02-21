@@ -11,6 +11,17 @@ function textToFloat(text) {
   return v;
 }
 
+function round(value, decimals) {
+  // see http://www.jacklmoore.com/notes/rounding-in-javascript/
+  return Number(Math.round(value+'e'+decimals)+'e-'+decimals);
+}
+
+function hashTags(string) {
+  string = string.replace(/(^|\s)(#[a-z\d-_]+)/ig, "$1<span class='hash_tag'>$2</span>");
+  console.log(string);
+  return string;
+}
+
 function checkApikey() {
   apikey = localStorage.getItem("apikey");
   if (apikey) {
@@ -43,6 +54,7 @@ function loadAccountsIntoUI() {
           $("#account-name").html($(this).attr('data-name'));
           $("#account-code").html($(this).attr('data-code'));
           $("#account-longname").html($(this).attr('data-longname'));
+          loadPostingsOfAccount($(this).attr('data-code'));
           $("#account-details-page").show();
         })
       );
@@ -58,6 +70,50 @@ function loadAccountsIntoUI() {
   });
   
 }
+
+function loadPostingsOfAccount(code) {
+  var lines = [];
+  
+  var t = transactions.filter(function(v) { return v['ok'] && !v['deleted']; });
+
+  console.log(t);
+  
+  var sum = 0;
+
+  for (var r=0; r<t.length; r++) {
+    for (var p=0; p<t[r]['postings'].length; p++) {
+      if (t[r]['postings'][p]['account']==code) {
+        lines.push({date: t[r]['date'], description: t[r]['description'], amount: parseFloat(t[r]['postings'][p]['amount']).toFixed(2)});
+        sum += parseFloat(t[r]['postings'][p]['amount']);
+      }
+    }
+  }
+  $('#account-netsum').html(sum.toFixed(2));
+    
+  if (lines.length>0) {
+    var tableBody = $('#account-postings-body').empty();
+    
+    for (var i=0; i<lines.length; i++) {
+      tableBody.append(
+        $('<tr/>')
+          .append(
+            $('<td/>').html(lines[i]['date'])
+          )
+          .append(
+            $('<td/>').html(lines[i]['description'])
+          )
+          .append(
+            $('<td/>').addClass('amount').html(lines[i]['amount'])
+          )
+      );
+    }
+    $('#account-postings').show();
+  }
+  else {
+    $('#account-postings').hide();
+  }
+}
+
 
 function loadAccountsIntoPosting(element) {
   element.empty();
@@ -130,15 +186,27 @@ function fixTransaction(transaction) {
   // first, we filter out postings with no account
   transaction['postings'] = transaction['postings'].filter(function(v) {return v['account']!='';});
   
-  // second, we find out how many postings have a zero amount
+  // second, we round the amounts to two decimals and find out how many postings have a zero amount
   var pWV = [];  // postings with amount zero;
-  transaction['postings'].filter(function(v, k) {if (v['amount']==0) pWV.push(k);});
+  transaction['postings'].filter(function(v, k) {
+    if (v['amount']==0) pWV.push(k);
+  });
   
   // third, if we only have one zero-amount posting...
   if (pWV.length==1){ 
     var sum = transaction['postings'].reduce(function(a, v) {return a + textToFloat(v['amount']); }, 0);
-    transaction['postings'][pWV[0]]['amount']=-sum;
+    if (sum!=0) {
+      transaction['postings'][pWV[0]]['amount']=-sum;
+    } else {
+      // (but if we don't really need it, we remove the posting...
+      transaction['postings'] = transaction['postings'].filter(function(v) {return v['amount']!=0;});
+    }
   }
+  
+  // fourth, we sort postings by account code
+  
+  transaction['postings'].sort(function(a,b) {return a['account']>b['account'];});
+    
 }
 
 function loadTransactionsIntoUI() {
@@ -149,7 +217,7 @@ function loadTransactionsIntoUI() {
     .filter(function (item) { return item['deleted']==false; })
     .sort(function (a, b) { return a['date'] < b['date']; });
   for (var i=0; i<items.length; i++) {
-    var text = items[i]['date'] + ' ' + items[i]['description'];
+    var text = items[i]['date'] + ' ' + hashTags(items[i]['description']);
     if (!items[i]['ok']) {
       text += ' ⚠️';
     }
@@ -171,6 +239,11 @@ function loadTransactionsIntoUI() {
   $("#transaction-back-button").click(function() {
     $("#transactions-page").show();
     $("#transaction-details-page").hide();
+  });
+  
+  $('.hash_tag').click(function(e) {
+    e.stopPropagation();
+    alert($(this).context.textContent);
   });
   
 }
@@ -415,7 +488,6 @@ $( document ).ready(function() {
   });
 
 
-
   checkApikey();
   
   transactions = JSON.parse(localStorage.getItem('transactions'));
@@ -427,6 +499,9 @@ $( document ).ready(function() {
   }
   
   accounts = JSON.parse(localStorage.getItem('accounts'));
+  if (accounts) {
+    loadAccountsIntoUI();
+  }
   
   var content = JSON.stringify({'a': 500, 'b': "ciao bao miao"});
   var password = "booo";

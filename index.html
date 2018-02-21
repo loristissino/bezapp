@@ -67,8 +67,37 @@
         </div>
         <div id="account-details-page" class="initially-hidden">
           <h1 id="account-name"></h1>
-          <div>Code: <strong><span id="account-code"></span></strong></div>
-          <div>Long name: <strong><span id="account-longname"></span></strong></div>
+          <div>Code: <span id="account-code"></span></div>
+          <div>Long name: <span id="account-longname"></span></div>
+          <div>Net amount: <span id="account-netsum">0</span></div>
+          
+          <table data-role="table" id="account-postings" data-mode="reflow" class="ui-responsive table-stroke">
+            <thead>
+              <tr>
+                <th data-priority="1">Date</th>
+                <th data-priority="persist">Description</th>
+                <th data-priority="2">Amount</th>
+              </tr>
+            </thead>
+            <tbody id="account-postings-body">
+              <tr>
+                <td>2017-02-20</td>
+                <td>Something done</td>
+                <td class="amount">100</td>
+              </tr>
+              <tr>
+                <td>2017-02-22</td>
+                <td>Something else done</td>
+                <td class="amount">50</td>
+              </tr>
+              <tr>
+                <td>2017-02-23</td>
+                <td>Bought a paper</td>
+                <td class="amount">-10</td>
+              </tr>
+            </tbody>
+          </table>
+          
           <button id="accounts-back-button" class="ui-btn ui-icon-back ui-btn-icon-left">Back</button>
         </div>
         <div id="transactions-page" class="initially-hidden">
@@ -86,10 +115,10 @@
           <input type="text" name="description" id="description" value="">
           <div id="postings"></div>
           <div style="text-align: right;">
-            <button id="transaction-add-account" class="ui-btn ui-btn-inline ui-icon-carat-d ui-btn-icon-right">Add</button>
+            <button id="transaction-add-account" class="ui-btn ui-btn-inline ui-icon-plus ui-btn-icon-right">Add</button>
           </div>
           <button id="transaction-save" class="ui-btn ui-icon-check ui-btn-icon-left">Save</button>
-          <button id="transaction-duplicate" class="ui-btn ui-icon-plus ui-btn-icon-left">Duplicate</button>
+          <button id="transaction-duplicate" class="ui-btn ui-icon-duplicate ui-btn-icon-left">Duplicate</button>
           <button id="transaction-delete" class="ui-btn ui-shadow ui-icon-delete ui-btn-icon-left ui-btn-b">Delete</button>
 
           <button id="transaction-back-button" class="ui-btn ui-icon-back ui-btn-icon-left">Back</button>
