@@ -29,6 +29,8 @@ function checkApikey() {
      $("#apikey_request").hide();
      $("#akr").show();
      $("#url").val(localStorage.getItem('url'));
+     $("#database").val(localStorage.getItem('database'));
+     $("#password").val(localStorage.getItem('password'));
   }
   else {
      $("#apikey").text(""); 
@@ -45,7 +47,7 @@ function loadAccountsIntoUI() {
   for (var i=0; i<accounts.length; i++) {
     var li = $('<li/>').addClass('account').append(
       $("<a/>")
-        .html(accounts[i]['name'])
+        .html(accounts[i]['emoji'] + ' ' + accounts[i]['name'])
         .attr('data-code', accounts[i]['code'])
         .attr('data-name', accounts[i]['name'])
         .attr('data-longname', accounts[i]['longname'])
@@ -120,7 +122,7 @@ function loadAccountsIntoPosting(element) {
   var items = JSON.parse(localStorage.getItem('accounts'));
   element.append($('<option>').html('---').attr('value', ''));
   for (var i=0; i<items.length; i++) {
-    var select_option = $('<option>').html(items[i]['name']).attr('value', items[i]['code']);
+    var select_option = $('<option>').html(items[i]['emoji'] + ' ' + items[i]['name']).attr('value', items[i]['code']);
     element.append(select_option);
   }
 }
@@ -152,7 +154,15 @@ function postingsToUI() {
     postings.append(account);
     $('#account_' + i).selectmenu().selectmenu( "refresh" );
     //postings.append($('<br />'));
-    var amount = $('<input/>').attr('id', 'amount_' + i).attr('type', 'number').css('text-align', 'right').attr('pattern', '\-[0-9\.]').val(currentTransaction['postings'][i]['amount']);
+    var amount = $('<input/>')
+      .attr('id', 'amount_' + i)
+      .attr('type', 'number')
+      .css('text-align', 'right')
+      .attr('pattern', '\-[0-9\.]')
+      .val(currentTransaction['postings'][i]['amount'])
+      .on("swiperight", function() {
+        $(this).val("");
+      });
     postings.append(amount);
     //postings.append($('<br />'));
     $('#amount_' + i).textinput().textinput( "refresh" );
@@ -167,11 +177,15 @@ function postingsFromUI() {
 }
 
 function isTransactionOk(transaction) {
+  var positive=0;
   var sum = transaction['postings'].reduce(function(a, v) {
     var account = accounts.find(function(item) {return item['code']==v['account'];});
     var amount = 0;
     if (account) {
       amount = textToFloat(v['amount']);
+      if (amount>0) {
+        positive+=amount;
+      }
     }
     else {
       console.log("account not found: " + v['account']);
@@ -179,7 +193,8 @@ function isTransactionOk(transaction) {
     }
     return a + amount; 
   }, 0);
-  return sum == 0 && transaction['postings'].length>=2;
+  transaction['amount']=positive;
+  return sum == 0 && transaction['postings'].length>=2 && positive>0;
 }
 
 function fixTransaction(transaction) {
@@ -217,7 +232,7 @@ function loadTransactionsIntoUI() {
     .filter(function (item) { return item['deleted']==false; })
     .sort(function (a, b) { return a['date'] < b['date']; });
   for (var i=0; i<items.length; i++) {
-    var text = items[i]['date'] + ' ' + hashTags(items[i]['description']);
+    var text = [items[i]['date'], ' [', items[i]['amount'].toFixed(2), '] ', hashTags(items[i]['description'])].join('');
     if (!items[i]['ok']) {
       text += ' ⚠️';
     }
@@ -251,6 +266,7 @@ function loadTransactionsIntoUI() {
 function retrieveAccounts() {
   $.getJSON( localStorage.getItem('url'), {
     action: "accounts",
+    db: localStorage.getItem('database'),
     apikey: apikey,
   })
   .done(function( data ) {
@@ -297,6 +313,7 @@ function saveTransaction() {
   fixTransaction(currentTransaction);
   data['postings']=currentTransaction['postings'];
   data['ok']=isTransactionOk(currentTransaction);
+  data['amount']=currentTransaction['amount'];
   var index = transactions.findIndex(function(item) {return item['rowid']==id;});
   if (index > -1) {
     data['rowid']=id;
@@ -368,7 +385,6 @@ function removeTransaction() {
   if (index > -1) {
     transactions[index]['deleted']=true;
   }
-  console.log(transactions);
   saveTransactionsToLocalStorageAndShowThem();
 }
 
@@ -439,6 +455,8 @@ $( document ).ready(function() {
   // ---- settings management ----
   $("#settings-save").click(function() {
     localStorage.setItem('url', $("#url").val());
+    localStorage.setItem('database', $("#database").val());
+    localStorage.setItem('password', $("#password").val());
   });
 
   // ---- refresh buttons ----

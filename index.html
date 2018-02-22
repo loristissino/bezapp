@@ -80,21 +80,6 @@
               </tr>
             </thead>
             <tbody id="account-postings-body">
-              <tr>
-                <td>2017-02-20</td>
-                <td>Something done</td>
-                <td class="amount">100</td>
-              </tr>
-              <tr>
-                <td>2017-02-22</td>
-                <td>Something else done</td>
-                <td class="amount">50</td>
-              </tr>
-              <tr>
-                <td>2017-02-23</td>
-                <td>Bought a paper</td>
-                <td class="amount">-10</td>
-              </tr>
             </tbody>
           </table>
           
@@ -139,8 +124,12 @@
         <div id="settings-page" class="initially-hidden">
             <h1>Settings</h1>
               <div id="url_request">
-                <label for="url">Url:</label>
+                <label for="url">Backend URL:</label>
                 <input type="text" id="url" placeholder="url" />
+                <label for="database">Database:</label>
+                <input type="text" id="database" placeholder="database" />
+                <label for="password">Password:</label>
+                <input type="text" id="password" placeholder="password" />
                 <button id="settings-save" class="ui-btn ui-icon-check ui-btn-icon-left" >Save</button>
               </div>
               <div id="apikey_request">
