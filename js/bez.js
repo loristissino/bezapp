@@ -623,6 +623,7 @@ $( document ).ready(function() {
     removeTransaction();
     $("#dialog-page").hide();
     $("#transactions-page").show();
+    $("#menu-page").show();
   });
 
   $("#delete-transaction-cancel").click(function() {
