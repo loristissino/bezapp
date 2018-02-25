@@ -11,6 +11,31 @@ function textToFloat(text) {
   return v;
 }
 
+function encrypt(content) {
+  var password = localStorage.getItem('password') || '';
+  if (password) {
+    return GibberishAES.enc(content, password);
+  }
+  else {
+    return content;
+  }
+}
+
+function decrypt(content) {
+  var password = localStorage.getItem('password') || '';
+  if (password) {
+    content = content.replace('\n', '').replace("\\", '');
+    try {
+      return GibberishAES.dec(content, password);
+    }
+    catch (e) {
+    } return false;
+  }
+  else {
+    return content;
+  }
+}
+
 function round(value, decimals) {
   // see http://www.jacklmoore.com/notes/rounding-in-javascript/
   return Number(Math.round(value+'e'+decimals)+'e-'+decimals);
@@ -18,7 +43,6 @@ function round(value, decimals) {
 
 function hashTags(string) {
   string = string.replace(/(^|\s)(#[a-z\d-_]+)/ig, "$1<span class='hash_tag'>$2</span>");
-  console.log(string);
   return string;
 }
 
@@ -29,8 +53,9 @@ function checkApikey() {
      $("#apikey_request").hide();
      $("#akr").show();
      $("#url").val(localStorage.getItem('url'));
-     $("#database").val(localStorage.getItem('database'));
-     $("#password").val(localStorage.getItem('password'));
+     $("#database").val(localStorage.getItem('database') || 'test');
+     $("#password").val(localStorage.getItem('password') || 'opensecret');
+     $("#limit-date").val(localStorage.getItem('limit-date') || '2099-12-31');
   }
   else {
      $("#apikey").text(""); 
@@ -76,10 +101,11 @@ function loadAccountsIntoUI() {
 function loadPostingsOfAccount(code) {
   var lines = [];
   
-  var t = transactions.filter(function(v) { return v['ok'] && !v['deleted']; });
-
-  console.log(t);
+  var limitDate = localStorage.getItem('limit-date');
+  console.log(limitDate);
   
+  var t = transactions.filter(function(v) { return v['ok'] && !v['deleted'] && v['date']<=limitDate; });
+
   var sum = 0;
 
   for (var r=0; r<t.length; r++) {
@@ -129,7 +155,7 @@ function loadAccountsIntoPosting(element) {
 
 function loadTransactionIntoUI(id) {
   if (id) {
-    var transaction = transactions.find(function(item) {return item['rowid']==id;});
+    var transaction = transactions.find(function(item) {return item['id']==id;});
     $('#transaction-title').html('Edit').attr('data-id', id);
   }
   else {
@@ -138,10 +164,14 @@ function loadTransactionIntoUI(id) {
     var transaction = {'date': date, 'description': '', 'postings': [ {'account': '', 'amount': ''}, {'account': '', 'amount': ''} ]};
     $('#transaction-title').html('New').attr('data-id', null);
   }
-  $('#date').val(transaction['date']);
-  $('#description').val(transaction['description']);
   currentTransaction = transaction;
   postingsToUI();
+  $('#date').val(transaction['date']);
+  $('#description').val(transaction['description']);
+  setTimeout(function(){
+    // hack from https://stackoverflow.com/questions/7179098/focus-problem-with-jquery-mobile
+    $('#description').focus();
+  },0);
 }
 
 function postingsToUI() {
@@ -224,22 +254,47 @@ function fixTransaction(transaction) {
     
 }
 
+function markAllTransactionsAsNew() {
+  // this function is called when there is a password change
+  // we need to make copies of the values and mark them as new,
+  // while marking the old ones as deleted
+  var newTransactions = [];
+  for (var i=0; i<transactions.length; i++) {
+    if (transactions[i]['onDB']) {
+      var newTransaction=JSON.parse(JSON.stringify(transactions[i]));
+      transactions[i]['deleted']=true;
+      newTransaction['onDB']=false;
+      newTransaction['id']=-transactions[i]['id'];
+      newTransactions.push(newTransaction);
+    }
+  }
+  transactions = transactions.concat(newTransactions);
+  saveTransactionsToLocalStorage(false);
+}
+
 function loadTransactionsIntoUI() {
 
   var list = $("#transactions-list");
+  var limitDate = localStorage.getItem('limit-date');
   list.empty();
   var items = transactions
-    .filter(function (item) { return item['deleted']==false; })
+    .filter(function (item) { return item['deleted']==false && item['date']<=limitDate; })
     .sort(function (a, b) { return a['date'] < b['date']; });
   for (var i=0; i<items.length; i++) {
-    var text = [items[i]['date'], ' [', items[i]['amount'].toFixed(2), '] ', hashTags(items[i]['description'])].join('');
-    if (!items[i]['ok']) {
-      text += ' ⚠️';
+    var t = [items[i]['date'], ' ', hashTags(items[i]['description']), ' / ', items[i]['amount'].toFixed(2)];
+    
+    var icon = 'carat-r';
+    if (items[i]['onDB']) {
+      icon = 'cloud';
     }
-    var li = $('<li/>').addClass('transaction').append(
+    if (!items[i]['ok']) {
+      icon = 'alert';
+    }
+    
+    var li = $('<li/>').attr('data-icon', icon).addClass('transaction').append(
       $("<a/>")
-        .html(text)
-        .attr('data-id', items[i]['rowid'])
+        .html(t.join(''))
+        .attr('data-id', items[i]['id'])
         .click(function() {
           $("#transactions-page").hide();
           loadTransactionIntoUI($(this).attr('data-id'));
@@ -282,21 +337,56 @@ function retrieveAccounts() {
   ;
 }
 
+function synchronizeTransactions() {
+  // first, we filter out transactions that were deleted but never transferred to the DB
+  transactions = transactions.filter(function(v) { return !(v['deleted'] && !v['onDB']); });
+
+  // second, we act on the remaining transactions according to the content of each one
+  for (var i=0; i<transactions.length; i++)
+  {
+    var t = transactions[i];
+    if (t['deleted']) {
+      deleteTransaction(t['id']);
+    }
+    if (!t['onDB'] && t['ok']) {
+      uploadTransaction(t);
+    }
+  }
+  
+  // third, we retrieve stored transactions 
+  retrieveTransactions();
+}
+
 function retrieveTransactions() {
   $.getJSON( localStorage.getItem('url'), {
     action: "transactions",
     apikey: apikey,
+    db: localStorage.getItem('database')
   })
   .done(function( data ) {
-    localStorage.setItem('transactions', JSON.stringify(data));
-    $("#transactions-hr").addClass("success");
-    $("#transactions-hr").removeClass("fail");
-    loadTransactionsIntoUI();
+    console.log(data);
+    var t = data;
+    for (var i=0; i<data.length; i++) {
+      var index = transactions.findIndex(function(item) {return item['id']==t[i]['id'];});
+      if (index==-1) {
+        console.log('we have to push one...');
+        console.log(t[i]['id']);
+        var decrypted = decrypt(t[i]['payload']);
+        if (decrypted) {
+          var values = JSON.parse(decrypt(t[i]['payload']));
+          delete values['nonce'];
+          values['id']=t[i]['id'];
+          values['ok']=true;
+          values['onDB']=true;
+          console.log(values);
+          transactions.push(values);
+        }
+      }
+    }
+    saveTransactionsToLocalStorage(true);
   })
   .fail(function() {
     console.log('failed');
-    $("#transactions-hr").addClass("fail");
-    $("#transactions-hr").removeClass("success");
   })
   ;
 }
@@ -314,62 +404,83 @@ function saveTransaction() {
   data['postings']=currentTransaction['postings'];
   data['ok']=isTransactionOk(currentTransaction);
   data['amount']=currentTransaction['amount'];
-  var index = transactions.findIndex(function(item) {return item['rowid']==id;});
+  var index = transactions.findIndex(function(item) {return item['id']==id;});
   if (index > -1) {
-    data['rowid']=id;
+    data['id']=id;
     transactions[index]=data;
   }
   else {
-    data['rowid']=-Date.now().valueOf(); // we use negative numbers for new items' ids
+    data['id']=-Date.now().valueOf(); // we use negative numbers for new items' ids
     transactions.push(data);
   }
   
-  saveTransactionsToLocalStorageAndShowThem();
+  saveTransactionsToLocalStorage(true);
 }
 
-
-
-function saveTransactionsToLocalStorageAndShowThem() {
+function saveTransactionsToLocalStorage(show) {
   localStorage.setItem('transactions', JSON.stringify(transactions));
-  loadTransactionsIntoUI();
-  $("#transactions-page").show();
-  $("#transaction-details-page").hide();
+  if (show) {
+    loadTransactionsIntoUI();
+    $("#transactions-page").show();
+    $("#transaction-details-page").hide();
+  }
 }
 
-
-function uploadTransaction() {
-  var id = $('#transaction-title').attr('data-id');
-  
+function uploadTransaction(transaction) {
   var params = {
       action: "transaction",
       apikey: apikey,
+      db: localStorage.getItem('database'),
     };
 
   var type = 'POST';
   
-  if (id) {
+  if (transaction['id']>=0) {
     type = 'PUT';
-    params['id'] = id;
+    params['id'] = transaction['id'];
   }
+  
+  var oldId = transaction['id'];
+  
+  var savedTransaction = JSON.parse(JSON.stringify(transaction));
+  
+  delete savedTransaction['id'];
+  delete savedTransaction['ok'];
+  savedTransaction['nonce']=Math.random()+Date.now();
+
+  console.log(JSON.stringify(savedTransaction));
+
+  var payload = encrypt(JSON.stringify(savedTransaction));
+  
+  console.log(payload);
   
   $.ajax({
     url : localStorage.getItem('url') + '?' + $.param(params),
     contentType: 'application/json',
-    data: JSON.stringify({
-      data: { 
-        date: $('#date').val(),
-        debit: $('#debit-account').val(),
-        credit: $('#credit-account').val(),
-        amount: $('#amount').val(),
-        description:$('#description').val()
-        }}),
+    data: JSON.stringify(
+      { 
+        data: {
+          payload: payload
+        }
+      }
+    ),
     type : type,
     success : function(data){
-      /*
-      console.log(data);
-      retrieveTransactions();
-      */  
-      // here we should mark the transaction as sync'ed.
+      var receivedData = JSON.parse(data);
+      if (receivedData['status']=='OK') {
+        var index = transactions.findIndex(function(item) {return item['id']==oldId;});
+        transactions[index]['id']=parseInt(receivedData['id']);
+        transactions[index]['onDB']=true;
+        saveTransactionsToLocalStorage(false);
+        var htmlElement = $('#transactions-page').find("[data-id='" + oldId + "']");
+          if (htmlElement) {
+            htmlElement
+              .attr('data-icon', 'cloud')
+              .addClass('ui-icon-cloud')
+              .removeClass('ui-icon-carat-r')
+              ;
+        }
+      }
       }
     })
    .fail(function() {
@@ -381,35 +492,33 @@ function uploadTransaction() {
 
 function removeTransaction() {
   var id = $('#transaction-title').attr('data-id');
-  var index = transactions.findIndex(function(item) {return item['rowid']==id;});
+  var index = transactions.findIndex(function(item) {return item['id']==id;});
   if (index > -1) {
     transactions[index]['deleted']=true;
   }
-  saveTransactionsToLocalStorageAndShowThem();
+  saveTransactionsToLocalStorage(true);
 }
 
-function deleteTransaction() {
-  var id = $('#transaction-title').attr('data-id');
-  
+function deleteTransaction(id) {
   var params = {
       action: "transaction",
       apikey: apikey,
+      db: localStorage.getItem('database'),
+      id: id
     };
 
   var type = 'DELETE';
-  
-  if (id) {
-    params['id'] = id;
-  }
   
   $.ajax({
     url : localStorage.getItem('url') + '?' + $.param(params),
     type : type,
     success : function(data){
-      console.log(data);
-      retrieveTransactions();
-      $("#transactions-page").show();
-      $("#transaction-details-page").hide();
+      var receivedData = JSON.parse(data);
+      if (receivedData['status']=='OK') {
+        var index = transactions.findIndex(function(item) {return item['id']==id;});
+        transactions.splice(index, 1);
+        saveTransactionsToLocalStorage(false);
+      }
       }
     })
    .fail(function() {
@@ -456,7 +565,13 @@ $( document ).ready(function() {
   $("#settings-save").click(function() {
     localStorage.setItem('url', $("#url").val());
     localStorage.setItem('database', $("#database").val());
+    if ($("#password").val()!= localStorage.getItem('password')) {
+      localStorage.setItem('password', $("#password").val());
+      markAllTransactionsAsNew();
+    }
     localStorage.setItem('password', $("#password").val());
+    localStorage.setItem('limit-date', $("#limit-date").val());
+    loadTransactionsIntoUI();
   });
 
   // ---- refresh buttons ----
@@ -464,8 +579,8 @@ $( document ).ready(function() {
    retrieveAccounts();
   });
 
-  $("#transactions-refresh-button").click(function() {
-   retrieveTransactions();
+  $("#transactions-sync-button").click(function() {
+   synchronizeTransactions();
   });
 
   // ---- action buttons ----
@@ -473,7 +588,13 @@ $( document ).ready(function() {
     saveTransaction();
   });
   $("#transaction-duplicate").click(function() {
-    $('#transaction-title').html('New').attr('data-id', null);
+    var newTransaction = JSON.parse(JSON.stringify(currentTransaction));
+    // we make a deep copy of the transaction...
+    newTransaction['id']=-Date.now().valueOf();
+    newTransaction['onDB']=false;
+    // and we change the id
+    transactions.push(newTransaction);
+    saveTransactionsToLocalStorage(true);
   });
   $("#transactions-new").click(function() {
     loadTransactionIntoUI(null)
@@ -492,6 +613,10 @@ $( document ).ready(function() {
     postingsFromUI();
     currentTransaction['postings'].push({'account': '', 'amount': ''});
     postingsToUI();
+  });
+
+  $('#description').on("swiperight", function() {
+    $(this).val("");
   });
 
   $("#delete-transaction-confirm").click(function() {
@@ -520,19 +645,6 @@ $( document ).ready(function() {
   if (accounts) {
     loadAccountsIntoUI();
   }
-  
-  var content = JSON.stringify({'a': 500, 'b': "ciao bao miao"});
-  var password = "booo";
-  
-  var encrypted = GibberishAES.enc(content, password);
-  console.log(encrypted);
-
-  var decrypted =  GibberishAES.dec(encrypted, password);
-  console.log(decrypted);
-
-  console.log(transactions);
-  //alert(decrypted);
-  
   
 });
 

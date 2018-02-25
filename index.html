@@ -62,7 +62,6 @@
         <div id="accounts-page" class="initially-hidden">
             <h1>Accounts</h1>
               <ul data-role="listview" data-inset="true" data-filter="true" id="accounts-list"></ul>
-            <hr id="accounts-hr" />
             <button id="accounts-refresh-button" class="ui-btn ui-icon-refresh ui-btn-icon-left">Refresh</button>
         </div>
         <div id="account-details-page" class="initially-hidden">
@@ -89,15 +88,14 @@
             <h1>Transactions</h1>
             <button id="transactions-new" class="ui-btn ui-icon-plus ui-btn-icon-left">Add</button>
             <ul data-role="listview" data-inset="true" data-filter="true" id="transactions-list"></ul>
-            <hr id="transactions-hr" />
-            <button id="transactions-refresh-button" class="ui-btn ui-icon-refresh ui-btn-icon-left">Refresh</button>
+            <button id="transactions-sync-button" class="ui-btn ui-icon-recycle ui-btn-icon-left">Synchronize</button>
         </div>
         <div id="transaction-details-page" class="initially-hidden">
           <h1><span id="transaction-title"></span></h1>
           <label for="date">Date:</label>
           <input type="date" name="date" id="date" value="">
           <label for="description">Description:</label>
-          <input type="text" name="description" id="description" value="">
+          <input type="text" name="description" id="description" value="" autofocus>
           <div id="postings"></div>
           <div style="text-align: right;">
             <button id="transaction-add-account" class="ui-btn ui-btn-inline ui-icon-plus ui-btn-icon-right">Add</button>
@@ -130,6 +128,8 @@
                 <input type="text" id="database" placeholder="database" />
                 <label for="password">Password:</label>
                 <input type="text" id="password" placeholder="password" />
+                <label for="limit-date">Limit Date:</label>
+                <input type="date" id="limit-date" />
                 <button id="settings-save" class="ui-btn ui-icon-check ui-btn-icon-left" >Save</button>
               </div>
               <div id="apikey_request">
