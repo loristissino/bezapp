@@ -154,6 +154,7 @@ function loadAccountsIntoPosting(element) {
 }
 
 function loadTransactionIntoUI(id) {
+  console.log("loading transaction..." + id);
   if (id) {
     var transaction = transactions.find(function(item) {return item['id']==id;});
     $('#transaction-title').html('Edit').attr('data-id', id);
@@ -297,6 +298,8 @@ function loadTransactionsIntoUI() {
         .attr('data-id', items[i]['id'])
         .click(function() {
           $("#transactions-page").hide();
+          console.log($(this).attr('data-id'));
+          console.log(transactions);
           loadTransactionIntoUI($(this).attr('data-id'));
           $("#transaction-details-page").show();
         })
@@ -456,7 +459,7 @@ function uploadTransaction(transaction) {
   
   $.ajax({
     url : localStorage.getItem('url') + '?' + $.param(params),
-    contentType: 'application/json',
+    contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
     data: JSON.stringify(
       { 
         data: {
@@ -483,8 +486,11 @@ function uploadTransaction(transaction) {
       }
       }
     })
-   .fail(function() {
+   .fail(function(request, textStatus, errorThrown) {
       console.log("error");
+      console.log(request);//.getAllResponseHaders()); //.getResponseHeader('some_header')
+      console.log("headers");
+      console.log(request.getAllResponseHeaders()); //.getResponseHeader('some_header')
       return false;
     })
   ;
@@ -511,7 +517,7 @@ function deleteTransaction(id) {
   
   $.ajax({
     url : localStorage.getItem('url') + '?' + $.param(params),
-    type : type,
+    contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
     success : function(data){
       var receivedData = JSON.parse(data);
       if (receivedData['status']=='OK') {

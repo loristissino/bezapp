@@ -3,7 +3,7 @@
     xmlns:gap   = "http://phonegap.com/ns/1.0"
     id          = "it.tissino.bezapp"
     versionCode = "10"
-    version     = "0.1.9" >
+    version     = "0.2.0" >
 
 <!-- versionCode is optional and Android only -->
 
