@@ -343,8 +343,10 @@ function retrieveAccounts() {
 function synchronizeTransactions() {
   // first, we filter out transactions that were deleted but never transferred to the DB
   transactions = transactions.filter(function(v) { return !(v['deleted'] && !v['onDB']); });
-
+  saveTransactionsToLocalStorage(false);
+  
   // second, we act on the remaining transactions according to the content of each one
+  /*
   for (var i=0; i<transactions.length; i++)
   {
     var t = transactions[i];
@@ -354,7 +356,25 @@ function synchronizeTransactions() {
     if (!t['onDB'] && t['ok']) {
       uploadTransaction(t);
     }
-  }
+  }*/
+  var i=0;
+  var loop = setInterval(function() {
+    if (i<transactions.length) {
+      console.log('t' + i);
+      var t = transactions[i];
+      if (t['deleted']) {
+        deleteTransaction(t['id']);
+      }
+      if (!t['onDB'] && t['ok']) {
+        uploadTransaction(t);
+      }
+    }
+    else {
+      clearInterval(loop);
+    }
+    i++;
+  }, 30);
+  
   
   // third, we retrieve stored transactions 
   retrieveTransactions();
@@ -407,13 +427,16 @@ function saveTransaction() {
   data['postings']=currentTransaction['postings'];
   data['ok']=isTransactionOk(currentTransaction);
   data['amount']=currentTransaction['amount'];
-  var index = transactions.findIndex(function(item) {return item['id']==id;});
+  var index = transactions.findIndex(function(item) {return item['id'] && item['id']==id;});
+  console.log('found! index=' + index);
   if (index > -1) {
     data['id']=id;
     transactions[index]=data;
   }
   else {
     data['id']=-Date.now().valueOf(); // we use negative numbers for new items' ids
+    console.log(data['id']);
+    console.log('assigned');
     transactions.push(data);
   }
   
@@ -455,11 +478,17 @@ function uploadTransaction(transaction) {
 
   var payload = encrypt(JSON.stringify(savedTransaction));
   
-  console.log(payload);
+  // console.log(payload);
+
+  var htmlElement = $('#transactions-page').find("[data-id='" + oldId + "']");
+
+  if (htmlElement){
+    htmlElement.addClass('synchronizing');
+  }
   
   $.ajax({
     url : localStorage.getItem('url') + '?' + $.param(params),
-    contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+    //contentType: 'text/plain',
     data: JSON.stringify(
       { 
         data: {
@@ -475,12 +504,12 @@ function uploadTransaction(transaction) {
         transactions[index]['id']=parseInt(receivedData['id']);
         transactions[index]['onDB']=true;
         saveTransactionsToLocalStorage(false);
-        var htmlElement = $('#transactions-page').find("[data-id='" + oldId + "']");
           if (htmlElement) {
             htmlElement
               .attr('data-icon', 'cloud')
               .addClass('ui-icon-cloud')
               .removeClass('ui-icon-carat-r')
+              .removeClass('synchronizing')
               ;
         }
       }
@@ -565,6 +594,10 @@ $( document ).ready(function() {
     $('#'+element+'-menu-item').hide();
     $('#'+element+'-page').show();
     $("#menu-page").show();
+  });
+
+  $("#settings-menu-item").click(function() {
+    $('#export-link').attr('href', "data:text/plain,"+encrypt(JSON.stringify({accounts:accounts, transactions:transactions})));
   });
 
   // ---- settings management ----
@@ -654,5 +687,4 @@ $( document ).ready(function() {
   }
   
 });
-
 
