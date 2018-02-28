@@ -119,6 +119,25 @@
           </div>
         </div>
 
+        <div id="import-export-page" class="initially-hidden">
+          <h1>Import</h1>
+            <p>To do...</p>
+            <div style="text-align: right;">
+              <button id="import-button" class="ui-btn ui-btn-inline ui-icon-arrow-l ui-btn-icon-left">Import</button>
+            </div>
+          <h1>Export</h1>
+            <p>All data are exported encrypted and you will be provided a link for the download.</p>
+            <div id="export-div">
+              <p>To do...</p>
+            </div>
+            <div style="text-align: right;">
+              <button id="export-button" class="ui-btn ui-btn-inline ui-icon-arrow-r ui-btn-icon-right">Export</button>
+            </div>
+            <img id="import-export-sync-image" src="images/ajax-sync.gif" class="initially-hidden" />
+
+            <button id="import-export-back-button" class="ui-btn ui-icon-back ui-btn-icon-left">Back</button>
+        </div>  
+
         <div id="settings-page" class="initially-hidden">
             <h1>Settings</h1>
               <div id="url_request">
@@ -138,7 +157,7 @@
                 <button id="akb" class="ui-btn ui-icon-check ui-btn-icon-left">Set</button>
               </div>
               <a id="akr" href="#">Reset API key</a><br />
-              <a id="export-link" href="#" download="bez_encrypted.txt">Export current data</a>
+              <button id="import-export" class="ui-btn ui-icon-cloud ui-btn-icon-left">Import / Export</button>
               
         </div>
         <div id="menu-page">

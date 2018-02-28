@@ -323,7 +323,7 @@ function loadTransactionsIntoUI() {
 
 function retrieveAccounts() {
   $.getJSON( localStorage.getItem('url'), {
-    action: "accounts",
+    r: "accounts",
     db: localStorage.getItem('database'),
     apikey: apikey,
   })
@@ -382,7 +382,7 @@ function synchronizeTransactions() {
 
 function retrieveTransactions() {
   $.getJSON( localStorage.getItem('url'), {
-    action: "transactions",
+    r: "transactions",
     apikey: apikey,
     db: localStorage.getItem('database')
   })
@@ -454,7 +454,7 @@ function saveTransactionsToLocalStorage(show) {
 
 function uploadTransaction(transaction) {
   var params = {
-      action: "transaction",
+      r: "transaction",
       apikey: apikey,
       db: localStorage.getItem('database'),
     };
@@ -536,7 +536,7 @@ function removeTransaction() {
 
 function deleteTransaction(id) {
   var params = {
-      action: "transaction",
+      r: "transaction",
       apikey: apikey,
       db: localStorage.getItem('database'),
       id: id
@@ -559,6 +559,47 @@ function deleteTransaction(id) {
    .fail(function() {
       console.log("error");
       return false;
+    })
+  ;
+}
+
+function exportToFile() {
+  var htmlElement = $("#export-div");
+  $("#import-export-sync-image").show();
+  
+  var params = {
+    r: "file",
+  };
+  
+  $.ajax({
+    url : localStorage.getItem('url') + '?' + $.param(params),
+    type : 'POST',
+    data: JSON.stringify(
+      { 
+        content: encrypt(JSON.stringify({accounts:accounts, transactions:transactions}))
+      }
+    ),    
+    success : function(data){
+      console.log(data);
+      var info = JSON.parse(data);
+      console.log(info);
+      if (info['status']=="OK") {
+        htmlElement.html($('<a/>').attr('href', info['url']).html('download / share'));
+      }
+      else {
+        htmlElement.html($('<p/>').html('Sorry, something went wrong...'));
+      }
+      $("#import-export-sync-image").hide();
+
+    }
+    })
+   .fail(function(request, textStatus, errorThrown) {
+      htmlElement.html($('<p/>').html('Sorry, something went wrong...'));
+      $("#import-export-sync-image").hide();
+      console.log("error");
+      console.log(request);//.getAllResponseHaders()); //.getResponseHeader('some_header')
+      console.log("headers");
+      console.log(request.getAllResponseHeaders()); //.getResponseHeader('some_header')
     })
   ;
 }
@@ -596,8 +637,19 @@ $( document ).ready(function() {
     $("#menu-page").show();
   });
 
-  $("#settings-menu-item").click(function() {
-    $('#export-link').attr('href', "data:text/plain,"+encrypt(JSON.stringify({accounts:accounts, transactions:transactions})));
+  $("#import-export").click(function() {
+    $("#import-export-page").show();
+    $('#settings-page').hide();
+  });
+  
+  $("#import-export-back-button").click(function() {
+    $("#import-export-page").hide();
+    $('#settings-page').show();
+  });
+
+  $("#export-button").click(function() {
+    console.log("exporting...");
+    exportToFile();
   });
 
   // ---- settings management ----
