@@ -192,7 +192,7 @@ function postingsToUI() {
       .attr('pattern', '\-[0-9\.]')
       .val(currentTransaction['postings'][i]['amount'])
       .on("swiperight", function() {
-        $(this).val("");
+        $(this).val("").focus();
       });
     postings.append(amount);
     //postings.append($('<br />'));
