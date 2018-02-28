@@ -655,7 +655,7 @@ $( document ).ready(function() {
   });
 
   $('#description').on("swiperight", function() {
-    $(this).val("");
+    $(this).val("").focus();
   });
 
   $("#delete-transaction-confirm").click(function() {
