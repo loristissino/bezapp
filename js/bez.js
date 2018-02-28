@@ -638,6 +638,7 @@ $( document ).ready(function() {
   });
 
   $("#import-export").click(function() {
+    $("#export-div").empty();
     $("#import-export-page").show();
     $('#settings-page').hide();
   });
