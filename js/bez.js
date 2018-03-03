@@ -41,6 +41,15 @@ function round(value, decimals) {
   return Number(Math.round(value+'e'+decimals)+'e-'+decimals);
 }
 
+function selectPage(page) {
+  $("#pages").children().hide();
+  $("#menu-page").children().show();
+  $('#'+page+'-menu-item').hide();
+  $('#'+page+'-page').show();
+  $("#menu-page").show();
+  localStorage.setItem('lastPageSeen', page);
+}
+
 function hashTags(string) {
   string = string.replace(/(^|\s)(#[a-z\d-_]+)/ig, "$1<span class='hash_tag'>$2</span>");
   return string;
@@ -629,12 +638,8 @@ $( document ).ready(function() {
 
   // ---- menu management ----
   $(".menu-item").click(function() {
-    var element = $(this).attr('id').replace(/-menu-item/, '');
-    $("#pages").children().hide();
-    $("#menu-page").children().show();
-    $('#'+element+'-menu-item').hide();
-    $('#'+element+'-page').show();
-    $("#menu-page").show();
+    var page = $(this).attr('id').replace(/-menu-item/, '');
+    selectPage(page);
   });
 
   $("#import-export").click(function() {
@@ -692,9 +697,7 @@ $( document ).ready(function() {
     loadTransactionIntoUI(null)
     $("#transactions-page").hide();
     $("#transaction-details-page").show();
-
   });
-
 
   $("#transaction-delete").click(function() {
     $("#pages").children().hide();
@@ -737,6 +740,12 @@ $( document ).ready(function() {
   accounts = JSON.parse(localStorage.getItem('accounts'));
   if (accounts) {
     loadAccountsIntoUI();
+  }
+  
+  var lastPage = localStorage.getItem('lastPageSeen');
+  console.log(lastPage);
+  if (lastPage) {
+    selectPage(lastPage);
   }
   
 });
