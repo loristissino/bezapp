@@ -593,7 +593,9 @@ function exportToFile() {
       var info = JSON.parse(data);
       console.log(info);
       if (info['status']=="OK") {
-        htmlElement.html($('<a/>').attr('href', info['url']).html('download / share'));
+        //htmlElement.html($('<a/>').attr('href', info['url']).html('download / share'));
+        htmlElement.html($('<input/>').val('href', info['url']).html('download / share'));
+        
       }
       else {
         htmlElement.html($('<p/>').html('Sorry, something went wrong...'));
@@ -725,7 +727,10 @@ $( document ).ready(function() {
     $("#dialog-page").hide();
     $("#transaction-details-page").show();
   });
-
+  
+ document.addEventListener('backbutton', function() {
+    alert("backbutton pressed");
+  }, false);
 
   checkApikey();
   
